@@ -1,0 +1,18 @@
+# Dev-only image: mereproduksi versi Node.js yang sama dengan yang dipakai
+# Vercel (lihat "engines" di package.json) supaya bug "kok beda di Vercel"
+# ketahuan di lokal dulu. TIDAK dipakai oleh Vercel saat deploy — Vercel
+# build dari source langsung, bukan dari Dockerfile ini (lihat penjelasan
+# di README root).
+FROM node:22-slim
+
+WORKDIR /app
+
+# Dependencies dulu (layer terpisah) supaya `docker compose up` berikutnya
+# tidak install ulang npm kalau cuma source code yang berubah.
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 4000
+CMD ["npm", "run", "dev"]

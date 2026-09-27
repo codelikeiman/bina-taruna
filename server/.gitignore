@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.log
+
+# Berkas unggahan PPDB (KK, akta, ijazah/SKL, pas foto calon siswa) — data
+# pribadi, tidak boleh pernah masuk version control. Folder ini dibuat
+# otomatis saat server pertama kali berjalan (lihat src/server.ts).
+uploads/

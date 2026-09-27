@@ -1,0 +1,63 @@
+# Docker untuk DEVELOPMENT LOKAL saja — mereproduksi versi Node.js yang
+# sama dengan Vercel (lihat "engines" di masing-masing package.json) supaya
+# error "kok beda pas di-deploy" ketahuan di sini dulu, sebelum push.
+#
+# PENTING: Vercel TIDAK membaca file ini maupun Dockerfile.dev sama sekali
+# saat deploy produksi — Vercel build langsung dari source (lihat README
+# untuk penjelasan lengkap & cara deploy yang sebenarnya).
+#
+# Database & storage tetap ke Supabase cloud yang sesungguhnya (bukan
+# container lokal) — server/.env kamu dipakai apa adanya lewat env_file.
+#
+# Pakai:
+#   docker compose up --build
+# Lalu buka:
+#   http://localhost:5173  (situs publik)
+#   http://localhost:5174  (admin)
+#   http://localhost:4000  (API)
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    ports:
+      - '4000:4000'
+    env_file:
+      - ./server/.env
+    volumes:
+      - ./server:/app
+      - server_node_modules:/app/node_modules
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - '5173:5173'
+    environment:
+      API_PROXY_TARGET: http://server:4000
+    volumes:
+      - .:/app
+      - web_node_modules:/app/node_modules
+    depends_on:
+      - server
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.dev
+    ports:
+      - '5174:5174'
+    environment:
+      API_PROXY_TARGET: http://server:4000
+    volumes:
+      - ./admin:/app
+      - admin_node_modules:/app/node_modules
+    depends_on:
+      - server
+
+volumes:
+  server_node_modules:
+  web_node_modules:
+  admin_node_modules:
