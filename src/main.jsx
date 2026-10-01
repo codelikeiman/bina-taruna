@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import './index.css'
 import App from './App.jsx'
 import AuthPage from './pages/AuthPage.jsx'
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/ppdb" element={<PpdbPage />} />
           <Route path="/ppdb/status" element={<PpdbStatusPage />} />
         </Routes>
+        <Analytics />
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
