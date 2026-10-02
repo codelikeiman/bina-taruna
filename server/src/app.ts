@@ -26,6 +26,12 @@ import { photoUploadAdminRouter } from './modules/uploads/photoUpload.router'
 export function createApp() {
   const app = express()
 
+  // Vercel ada di depan app ini sebagai proxy -- tanpa ini, req.ip tidak
+  // membaca X-Forwarded-For dengan benar, sehingga rate limiter bisa salah
+  // identifikasi client (semua request keanggap satu "IP" yang sama, atau
+  // rentan di-spoof). Nilai 1 = percayai satu hop proxy di depan (Vercel).
+  app.set('trust proxy', 1)
+
   app.disable('x-powered-by')
   app.use(helmet())
   app.use(
