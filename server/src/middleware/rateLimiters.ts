@@ -16,11 +16,16 @@ import type { Request, Response, NextFunction } from 'express'
  * bukan koneksi TCP persisten -- cocok untuk serverless) sehingga SEMUA
  * instance baca/tulis ke counter yang sama. Limit jadi benar-benar global.
  *
- * Env var UPSTASH_REDIS_REST_URL & UPSTASH_REDIS_REST_TOKEN otomatis
- * terisi oleh Vercel setelah database Upstash Redis dibuat & di-connect
- * ke project ini lewat tab Storage di dashboard.
+ * Env var otomatis terisi oleh Vercel setelah database Upstash Redis
+ * dibuat & di-connect ke project ini lewat tab Storage di dashboard.
+ * Vercel menamainya KV_REST_API_URL / KV_REST_API_TOKEN (bukan
+ * UPSTASH_REDIS_REST_URL/...TOKEN seperti nama default Upstash) --
+ * makanya di sini dibaca eksplisit, bukan pakai Redis.fromEnv().
  */
-const redis = Redis.fromEnv()
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+})
 
 function makeLimiter(prefix: string, limit: number, windowSeconds: number) {
   return new Ratelimit({
@@ -94,10 +99,11 @@ function toMiddleware(limiter: Ratelimit, errorMessage: string) {
       }
       next()
     } catch (err) {
-      // Kalau Redis down/error, jangan block semua traffic -- log & lanjutkan.
-      // Sesuaikan ini kalau kamu lebih prefer "fail closed" demi keamanan.
-      console.error('[rateLimiter] Redis error, melewati pembatasan:', err)
-      next()
+      // Fail-closed: kalau Redis tidak bisa dihubungi, TOLAK request alih-alih
+      // meloloskannya tanpa batasan. Endpoint auth/login lebih aman "sementara
+      // tidak bisa diakses" daripada "sementara tidak ada rate limit sama sekali".
+      console.error('[rateLimiter] Redis error, menolak request demi keamanan:', err)
+      res.status(503).json({ error: 'Layanan sedang sibuk, coba lagi sebentar lagi.' })
     }
   }
 }
